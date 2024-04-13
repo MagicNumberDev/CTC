@@ -10,8 +10,10 @@ template <typename T, auto L> struct CTVec {
   constexpr const auto &operator[](size_type i) const { return data[i]; }
   constexpr auto begin() { return &data[0]; }
   constexpr const auto cbegin() const { return &data[0]; }
+  constexpr const auto begin() const { return &data[0]; }
   constexpr auto end() { return &data[L]; }
   constexpr const auto cend() const { return &data[L]; }
+  constexpr const auto end() const { return &data[L]; }
   constexpr operator auto() { return data; }
   constexpr operator const auto() const { return data; }
 };

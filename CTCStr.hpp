@@ -10,8 +10,10 @@ template <typename T, auto L> struct CTCStr {
   constexpr const auto &operator[](size_type i) const { return data[i]; }
   constexpr auto begin() { return &data[0]; }
   constexpr const auto cbegin() const { return &data[0]; }
+  constexpr const auto begin() const { return &data[0]; }
   constexpr auto end() { return &data[L - 1]; }
   constexpr const auto cend() const { return &data[L - 1]; }
+  constexpr const auto end() const { return &data[L - 1]; }
   constexpr operator auto() { return data; }
   constexpr operator const auto() const { return data; }
   constexpr const auto c_str() { return data; }
