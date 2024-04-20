@@ -1,12 +1,11 @@
 #pragma once
 #include "CTCBase.hpp"
-#include <type_traits>
 namespace CTC {
 template <typename T, auto L>
 struct CTCStr : basic_CTC_container {
     using size_type              = ::std::remove_cvref_t<decltype(L)>;
     using value_type             = T;
-    constexpr static auto length = L;
+    constexpr static auto length = L - 1;
     T                     data[L];
     constexpr CTCStr()                         = default;
     constexpr CTCStr(const CTCStr&)            = default;

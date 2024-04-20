@@ -1,6 +1,5 @@
 #pragma once
 #include "CTCBase.hpp"
-#include <type_traits>
 namespace CTC {
 template <typename T, auto L>
 struct CTVec : basic_CTC_container {

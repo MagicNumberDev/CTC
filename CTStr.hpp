@@ -1,6 +1,6 @@
 #pragma once
 #include "CTCBase.hpp"
-#include <type_traits>
+
 namespace CTC {
 template <typename T, auto L>
 struct CTStr : basic_CTC_container {
@@ -29,11 +29,18 @@ struct CTStr : basic_CTC_container {
     constexpr operator auto() { return data; }
     constexpr operator const auto() const { return data; }
     constexpr const auto c_str() { return data; }
+    consteval auto       as_zero_end_str() {
+        struct {
+            T data[L] = {0};
+        } buffer;
+        for (size_type i = 0; i < L - 1; i++) buffer.data[i] = data[i];
+        return buffer;
+    }
 };
 template <typename T, auto N>
 CTStr(T (&)[N]) -> CTStr<std::remove_cvref_t<T>, N>;
 template <typename T, auto L1, auto L2>
-constexpr auto operator+(const CTStr<T, L1>& a, const CTStr<T, L2>& b) {
+consteval auto operator+(const CTStr<T, L1>& a, const CTStr<T, L2>& b) {
     CTStr<T, L1 + L2 - 1> res;
     for (auto i = 0; i < L1 - 1; i++) {
         res[i] = a[i];

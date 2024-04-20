@@ -1,10 +1,9 @@
 #pragma once
-#include <cstdlib>
 #include <filesystem>
-#include <string>
 
 
-extern "C" std::size_t strlen(const char*);
+extern "C" std::size_t std::strlen(const char*);
+extern "C" int         strcmp(const char*, const char*);
 namespace opt_helper {
 template <typename T>
 struct OptVal {
@@ -17,7 +16,7 @@ struct OptVal {
     auto tod() { return std::stod(data); }
     auto tof() { return std::stof(data); }
     auto told() { return std::stold(data); }
-    auto tob() { return strcmp(data, "true") == 0; }
+    auto tob() { return std::strcmp(data, "true") == 0; }
     auto top() { return std::filesystem::path(data); }
     auto empty() { return data == nullptr || data[0] == '\0'; }
 };
@@ -56,4 +55,5 @@ struct Parser {
         }
     }
 };
+
 } // namespace opt_helper

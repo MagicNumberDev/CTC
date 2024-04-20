@@ -1,5 +1,4 @@
 #pragma once
-#include "CTCBase.hpp"
 #include <concepts>
 
 namespace CTC {
