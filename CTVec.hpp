@@ -18,6 +18,21 @@ struct CTVec : basic_CTC_container {
     constexpr const auto  end() const { return &data[L]; }
     constexpr operator auto() { return data; }
     constexpr operator const auto() const { return data; }
+    constexpr CTVec()                        = default;
+    constexpr CTVec(const CTVec&)            = default;
+    constexpr CTVec(CTVec&&)                 = default;
+    constexpr CTVec& operator=(const CTVec&) = default;
+    constexpr CTVec& operator=(CTVec&&)      = default;
+    template <typename FT, typename... Ts>
+    constexpr CTVec(FT first, Ts... rest) {
+        if constexpr (sizeof...(rest) != 0) {
+            FT t[] = {first, rest...};
+            for (size_type i = 0; i < sizeof...(rest) + 1; i++) data[i] = t[i];
+        } else {
+            FT t[] = {first};
+            for (size_type i = 0; i < sizeof...(rest) + 1; i++) data[i] = t[i];
+        }
+    }
 };
 template <typename T, typename... Ts>
 CTVec(T first, Ts... rest) -> CTVec<std::remove_cvref_t<T>, sizeof...(Ts) + 1>;

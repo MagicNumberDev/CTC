@@ -14,9 +14,7 @@ struct CTCStr : basic_CTC_container {
     constexpr CTCStr& operator=(const CTCStr&) = default;
     constexpr CTCStr& operator=(CTCStr&&)      = default;
     constexpr CTCStr(const T (&s)[L]) {
-        for (size_type i = 0; i < L; i++) {
-            data[i] = s[i];
-        }
+        for (size_type i = 0; i < L; i++) data[i] = s[i];
     }
     constexpr auto&       operator[](size_type i) { return data[i]; }
     constexpr const auto& operator[](size_type i) const { return data[i]; }
@@ -33,7 +31,7 @@ struct CTCStr : basic_CTC_container {
 template <typename T, auto N>
 CTCStr(T (&)[N]) -> CTCStr<std::remove_cvref_t<T>, N>;
 template <typename T, auto L1, auto L2>
-constexpr auto operator+(const CTCStr<T, L1>& a, const CTCStr<T, L2>& b) {
+[[nodiscard]] constexpr auto operator+(const CTCStr<T, L1>& a, const CTCStr<T, L2>& b) {
     CTCStr<T, L1 + L2 - 1> res;
     for (auto i = 0; i < L1; i++) {
         res[i] = a[i];
