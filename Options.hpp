@@ -19,6 +19,7 @@ struct OptVal {
     auto told() { return std::stold(data); }
     auto tob() { return strcmp(data, "true") == 0; }
     auto top() { return std::filesystem::path(data); }
+    auto empty() { return data == nullptr || data[0] == '\0'; }
 };
 
 template <typename T, typename U>
