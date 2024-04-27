@@ -1,6 +1,16 @@
 #pragma once
 #include "CTCBase.hpp"
+#include <tuple>
 namespace CTC {
+namespace details {
+template <auto I>
+constexpr auto setter(auto& data, const auto&... args) {
+    data[I] = std::get<I>(std::forward_as_tuple(args...));
+    if constexpr (I + 1 < sizeof...(args)) {
+        return setter<I + 1>(data, args...);
+    }
+}
+} // namespace details
 template <typename T, auto L>
 struct CTVec : basic_CTC_container {
     using size_type              = ::std::remove_cvref_t<decltype(L)>;
@@ -22,15 +32,9 @@ struct CTVec : basic_CTC_container {
     constexpr CTVec(CTVec&&)                 = default;
     constexpr CTVec& operator=(const CTVec&) = default;
     constexpr CTVec& operator=(CTVec&&)      = default;
-    template <typename FT, typename... Ts>
-    constexpr CTVec(FT first, Ts... rest) {
-        if constexpr (sizeof...(rest) != 0) {
-            FT t[] = {first, rest...};
-            for (size_type i = 0; i < sizeof...(rest) + 1; i++) data[i] = t[i];
-        } else {
-            FT t[] = {first};
-            for (size_type i = 0; i < sizeof...(rest) + 1; i++) data[i] = t[i];
-        }
+    template <typename... Ts>
+    constexpr CTVec(Ts... args) {
+        details::setter<0>(data, args...);
     }
 };
 template <typename T, typename... Ts>
@@ -38,10 +42,10 @@ CTVec(T first, Ts... rest) -> CTVec<std::remove_cvref_t<T>, sizeof...(Ts) + 1>;
 template <typename T, auto L1, auto L2>
 constexpr auto operator+(const CTVec<T, L1>& a, const CTVec<T, L2>& b) {
     CTVec<T, L1 + L2> res;
-    for (auto i = 0; i < L1; i++) {
+    for (std::remove_cvref_t<decltype(L1)> i = 0; i < L1; i++) {
         res[i] = a[i];
     }
-    for (auto i = 0; i < L2; i++) {
+    for (std::remove_cvref_t<decltype(L2)> i = 0; i < L2; i++) {
         res[L1 + i] = b[i];
     }
     return res;
