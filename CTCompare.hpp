@@ -4,7 +4,7 @@
 
 namespace CTC {
 template <details::CTCC T, details::CTCC U>
-[[nodiscard]] constexpr std::weak_ordering operator==(const T& a, const U& b) {
+[[nodiscard]] constexpr std::weak_ordering operator<=>(const T& a, const U& b) {
     auto ai = a.cbegin();
     auto bi = b.cbegin();
     for (; ai != a.cend() && bi != b.cend() && *ai == *bi; ai++, bi++)
