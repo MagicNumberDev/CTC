@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdlib>
+#include <limits>
 #include <tuple>
 #include <utility>
 namespace CTC {
@@ -7,8 +8,9 @@ namespace CTC {
 template <typename T, typename STYPE = ::std::size_t>
 struct CTDArray {
 private:
-    T*    data_;
-    STYPE size_;
+    T*    data_     = nullptr;
+    STYPE size_     = 0;
+    STYPE capacity_ = 0;
 
 public:
     using value_type = T;
@@ -17,8 +19,9 @@ public:
     constexpr const auto& data() const { return data_; }
     constexpr auto        size() const { return size_; }
     constexpr CTDArray() {
-        data_ = nullptr;
-        size_ = 0;
+        data_     = nullptr;
+        size_     = 0;
+        capacity_ = 0;
     }
     constexpr CTDArray(const CTDArray& o) {
         if (o.size_ == 0 || o.data_ == nullptr) return;
@@ -44,30 +47,23 @@ public:
     constexpr auto        end() { return &data_[size_]; }
     constexpr const auto  end() const { return &data_[size_]; }
     constexpr auto&       push_back(const T& v) {
-        auto new_data = new T[size_ + 1];
-        for (size_type i = 0; i < size_; i++) new_data[i] = std::move(data_[i]);
-        new_data[size_] = v;
-        size_++;
-        if (data_ != nullptr && size_ != 0) delete[] data_;
-        data_ = new_data;
+        new_length<true>(size_ + 1);
+        data_[size_ - 1] = v;
         return data_[size_ - 1];
     }
     constexpr auto& push_back(T&& v) {
-        auto new_data = new T[size_ + 1];
-        for (size_type i = 0; i < size_; i++) new_data[i] = std::move(data_[i]);
-        new_data[size_] = std::move(v);
-        size_++;
-        if (data_ != nullptr && size_ != 0) delete[] data_;
-        data_ = new_data;
+        new_length<true>(size_ + 1);
+        data_[size_ - 1] = std::move(v);
         return data_[size_ - 1];
     }
-    constexpr void resize(size_type s) {
-        auto new_data = new T[s];
-        for (size_type i = 0; i < std::min(s, size_); i++) new_data[i] = std::move(data_[i]);
-        delete_if_has_data();
-        data_ = new_data;
-        size_ = s;
+    constexpr auto pop_back() {
+        auto t = data_[size_ - 1];
+        new_length(size_ - 1);
+        return t;
     }
+    constexpr void resize(size_type s) { new_length<true>(s); }
+    constexpr auto max_size() { return std::numeric_limits<size_type>::max(); }
+    constexpr auto capacity() { return capacity_; }
 
 private:
     constexpr void delete_if_has_data() {
@@ -75,8 +71,32 @@ private:
         data_ = nullptr;
         size_ = 0;
     }
+    template <bool CopyOldData = false>
     constexpr void new_length(size_type l) {
-        data_ = new T[l];
+        if (capacity_ == 0) {
+            data_     = new T[2];
+            capacity_ = 2;
+        }
+        if (l < capacity_) {
+            size_ = l;
+            return;
+        }
+        auto temp_data = data_;
+        data_          = nullptr;
+        if (capacity_ + capacity_ / 2 > max_size()) {
+            data_     = new T[max_size()];
+            capacity_ = max_size();
+        } else {
+            data_     = new T[capacity_ + capacity_ / 2];
+            capacity_ = capacity_ + capacity_ / 2;
+        }
+        if constexpr (CopyOldData) {
+            if (temp_data != nullptr)
+                for (size_type i = 0; i < std::min(size_, l); i++) {
+                    data_[i] = std::move(temp_data[i]);
+                }
+        }
+        delete[] temp_data;
         size_ = l;
     }
     template <auto I>
