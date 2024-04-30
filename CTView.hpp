@@ -9,6 +9,11 @@ concept Iterator = requires(std::remove_cvref_t<T> a, std::remove_cvref_t<T> b) 
     { a = b };
     { a == b } -> std::convertible_to<bool>;
 };
+template <typename T>
+concept Iterable = requires(T a) {
+    { a.begin() } -> std::convertible_to<decltype(a.end())>;
+    { a.begin() } -> Iterator;
+};
 
 template <Iterator T>
 struct View {
@@ -18,19 +23,9 @@ struct View {
     [[nodiscard]] const auto& begin() const { return begin_; }
     [[nodiscard]] auto&       end() { return end_; }
     [[nodiscard]] const auto& end() const { return end_; }
-    auto                      begin(T b) {
-        auto t = begin_;
-        begin_ = b;
-        return t;
-    }
-    auto end(T b) {
-        auto t = end_;
-        end_   = b;
-        return t;
-    }
 };
-template <typename T>
-constexpr auto form_container(T& a) {
+template <Iterable T>
+constexpr auto view_form_iterable(T& a) {
     return View{a.begin(), a.end()};
 }
 

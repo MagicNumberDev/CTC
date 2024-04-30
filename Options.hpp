@@ -18,30 +18,18 @@ namespace opt_helper {
 
 template <typename T>
 struct Expection {
-    T*   value                                       = nullptr;
-    bool is_owner                                    = false;
+    T value;
     constexpr Expection()                            = default;
     constexpr Expection(const Expection&)            = default;
     constexpr Expection(Expection&&)                 = default;
     constexpr Expection& operator=(const Expection&) = default;
     constexpr Expection& operator=(Expection&&)      = default;
-    constexpr Expection(T& d) { value = &d; }
-    constexpr Expection(T d) { value = &d; }
-    constexpr ~Expection() {
-        if (is_owner) delete value;
-    }
-    constexpr T& expect(auto&& f) {
-        if (value == nullptr) {
-            if constexpr (std::convertible_to<decltype(f()), T*>) {
-                is_owner = true;
-                return *f();
-            } else f();
-        }
-        return *value;
-    }
-    constexpr const T& expect(auto&& f) const {
-        if (value == nullptr) f();
-        return *value;
+    constexpr Expection(const T& d) { value = d; }
+    constexpr T expect(auto&& f) {
+        if constexpr (std::convertible_to<decltype(f()), T>) {
+            return f();
+        } else f();
+        return value;
     }
 };
 
