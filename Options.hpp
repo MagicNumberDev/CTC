@@ -18,17 +18,23 @@ namespace opt_helper {
 
 template <typename T>
 struct Expection {
-    T value;
+    T    value;
+    bool success                                     = false;
     constexpr Expection()                            = default;
     constexpr Expection(const Expection&)            = default;
     constexpr Expection(Expection&&)                 = default;
     constexpr Expection& operator=(const Expection&) = default;
     constexpr Expection& operator=(Expection&&)      = default;
-    constexpr Expection(const T& d) { value = d; }
+    constexpr Expection(const T& d) {
+        value   = d;
+        success = true;
+    }
     constexpr T expect(auto&& f) {
-        if constexpr (std::convertible_to<decltype(f()), T>) {
-            return f();
-        } else f();
+        if (!success) {
+            if constexpr (std::convertible_to<decltype(f()), T>) {
+                return f();
+            } else f();
+        }
         return value;
     }
 };
