@@ -34,7 +34,10 @@ struct Expection {
         if (reason != FailType::Non) {
             if constexpr (std::convertible_to<decltype(f(reason)), T>) {
                 return f(reason);
-            } else f(reason);
+            } else {
+                f(reason);
+                std::terminate();
+            }
         }
         return value;
     }
@@ -92,6 +95,23 @@ struct Parser {
         } else {
             return {r};
         }
+    }
+    template <auto first_opt, auto... opt>
+    bool exist() {
+        for (T i = 0; i < argc; i++) {
+            if (std::strlen(argv[i]) < first_opt.length) continue;
+            bool match = true;
+            for (::std::size_t j = 0; j < std::strlen(argv[i]); j++) {
+                if (argv[i][j] != first_opt[j]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (std::strlen(argv[i]) > first_opt.length && argv[i][std::strlen(argv[i]) + 1] != '=') match = false;
+            if (match) return true;
+        }
+        if constexpr (sizeof...(opt) != 0) return exist<opt...>();
+        else return false;
     }
 };
 
