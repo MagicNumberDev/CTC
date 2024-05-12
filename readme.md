@@ -1,4 +1,4 @@
 # CTC
-some compiling time containers
+some compiling time containers for c++23
 # usage
 download the repo,add it to include path
