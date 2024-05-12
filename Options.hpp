@@ -1,39 +1,40 @@
 #pragma once
 #include <concepts>
+#include <cstring>
 #include <filesystem>
+#include <string>
 
-
-extern "C" std::size_t std::strlen(const char*);
-extern "C" int         std::strcmp(const char*, const char*);
-
-#define EXPECTION(COND, ...)                                                                                           \
+#define EXPECTION(COND, VALUE)                                                                                         \
     [&] {                                                                                                              \
         if (COND) try {                                                                                                \
-                return Expection{__VA_ARGS__};                                                                         \
-            } catch (...) {}                                                                                           \
-        return Expection<decltype(__VA_ARGS__)>{};                                                                     \
+                return ::opt_helper::Expection<decltype(VALUE)>{VALUE};                                                \
+            } catch (...) {                                                                                            \
+                return ::opt_helper::Expection<decltype(VALUE)>{::opt_helper::FailType::Try};                          \
+            }                                                                                                          \
+        else return ::opt_helper::Expection<decltype(VALUE)>{::opt_helper::FailType::If};                              \
     }()
 
 namespace opt_helper {
-
+enum class FailType { If, Try, Non };
 template <typename T>
 struct Expection {
-    T    value;
-    bool success                                     = false;
+    T        value;
+    FailType reason                                  = FailType::Non;
     constexpr Expection()                            = default;
     constexpr Expection(const Expection&)            = default;
     constexpr Expection(Expection&&)                 = default;
     constexpr Expection& operator=(const Expection&) = default;
     constexpr Expection& operator=(Expection&&)      = default;
     constexpr Expection(const T& d) {
-        value   = d;
-        success = true;
+        value  = d;
+        reason = FailType::Non;
     }
+    constexpr Expection(const FailType& f) { reason = f; }
     constexpr T expect(auto&& f) {
-        if (!success) {
-            if constexpr (std::convertible_to<decltype(f()), T>) {
-                return f();
-            } else f();
+        if (reason != FailType::Non) {
+            if constexpr (std::convertible_to<decltype(f(reason)), T>) {
+                return f(reason);
+            } else f(reason);
         }
         return value;
     }
@@ -43,6 +44,7 @@ struct Expection {
 template <typename T>
 struct OptVal {
     T    data;
+    auto tos() { return EXPECTION(data != nullptr, std::string(data)); }
     auto toi() { return EXPECTION(data != nullptr, std::stoi(data)); }
     auto tol() { return EXPECTION(data != nullptr, std::stol(data)); }
     auto toll() { return EXPECTION(data != nullptr, std::stoll(data)); }
@@ -76,7 +78,9 @@ struct Parser {
                 index++;
             }
             if (not_match) continue;
-            if (argv[i][index] != '=' || argv[i][index] == '\0') r = nullptr;
+            if (argv[i][index] != '=' || argv[i][index] == '\0'
+                || (argv[i][index] == '=' && argv[i][index + 1] == '\0'))
+                r = nullptr;
             else r = &argv[i][(argv[i][index] == '=' ? index + 1 : index)];
         }
         if (r == nullptr) {
