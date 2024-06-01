@@ -1,8 +1,11 @@
 #pragma once
 #include <concepts>
 #include <cstring>
+#include <exception>
 #include <filesystem>
 #include <string>
+
+
 
 #define EXPECTION(COND, VALUE)                                                                                         \
     [&] {                                                                                                              \
@@ -30,10 +33,10 @@ struct Expection {
         reason = FailType::Non;
     }
     constexpr Expection(const FailType& f) { reason = f; }
-    constexpr T expect(auto&& f) {
+    constexpr T& expect(auto&& f) {
         if (reason != FailType::Non) {
             if constexpr (std::convertible_to<decltype(f(reason)), T>) {
-                return f(reason);
+                value = f(reason);
             } else {
                 f(reason);
                 std::terminate();
