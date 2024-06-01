@@ -18,6 +18,7 @@ struct Any {
     void* (*copyConstructor)(void*);
     constexpr Any() : data(nullptr), type_hash(0), destructor(nullptr), copyConstructor(nullptr) {}
     template <typename T>
+        requires(!std::same_as<T, Any&>)
     constexpr Any(T&& d)
     : data(new T(std::move(d))),
       type_hash(hash<T>()),
@@ -45,6 +46,16 @@ struct Any {
     }
     template <typename T>
     constexpr operator T&() {
+        if (hash<T>() == type_hash) return *((T*)data);
+        std::unreachable();
+    }
+    template <typename T>
+    constexpr T* cast_to_pointer() {
+        if (hash<T>() == type_hash) return (T*)data;
+        else return nullptr;
+    }
+    template <typename T>
+    constexpr T& cast_to_ref() {
         if (hash<T>() == type_hash) return *((T*)data);
         std::unreachable();
     }
