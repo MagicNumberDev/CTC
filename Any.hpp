@@ -16,7 +16,7 @@ struct Any {
     unsigned long long type_hash;
     void (*destructor)(void*);
     void* (*copyConstructor)(void*);
-    constexpr Any() : data(nullptr), type_hash(0), destructor(nullptr), copyConstructor(nullptr) {}
+    constexpr Any() : data(nullptr), type_hash(hash<std::nullptr_t>()), destructor(nullptr), copyConstructor(nullptr) {}
     template <typename T>
         requires(!std::same_as<T, Any&>)
     constexpr Any(T&& d)
@@ -50,12 +50,32 @@ struct Any {
         std::unreachable();
     }
     template <typename T>
+    constexpr operator const T*() const {
+        if (hash<T>() == type_hash) return (T*)data;
+        else return nullptr;
+    }
+    template <typename T>
+    constexpr operator const T&() const {
+        if (hash<T>() == type_hash) return *((T*)data);
+        std::unreachable();
+    }
+    template <typename T>
     constexpr T* cast_to_pointer() {
         if (hash<T>() == type_hash) return (T*)data;
         else return nullptr;
     }
     template <typename T>
     constexpr T& cast_to_ref() {
+        if (hash<T>() == type_hash) return *((T*)data);
+        std::unreachable();
+    }
+    template <typename T>
+    constexpr const T* cast_to_pointer() const {
+        if (hash<T>() == type_hash) return (T*)data;
+        else return nullptr;
+    }
+    template <typename T>
+    constexpr const T& cast_to_ref() const {
         if (hash<T>() == type_hash) return *((T*)data);
         std::unreachable();
     }
