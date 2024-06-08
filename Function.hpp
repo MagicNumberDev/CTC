@@ -19,7 +19,7 @@ struct Function<RetType(ArgsType...)> {
     Function(T f) : fn(f) {
         call = [](Any& fn, ArgsType... args) { return (fn.cast_to_ref<T>())(args...); };
     }
-    auto operator()(ArgsType... args) { return call(fn, args...); }
+    auto operator()(ArgsType&&... args) { return call(fn, args...); }
 };
 template <typename T>
 Function(T) -> Function<typename details::FunctionType<decltype(&T::operator())>::type>;
