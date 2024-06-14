@@ -3,9 +3,21 @@
 namespace CTC {
 namespace details {
 template <typename T>
-struct FunctionType;
+struct GetFunctionType;
 template <typename RetType, typename ObjType, typename... ArgsType>
-struct FunctionType<RetType (ObjType::*)(ArgsType...) const> {
+struct GetFunctionType<RetType (ObjType::*)(ArgsType...) const> {
+    using type = RetType(ArgsType...);
+};
+template <typename RetType, typename ObjType, typename... ArgsType>
+struct GetFunctionType<RetType (ObjType::*)(ArgsType...) volatile> {
+    using type = RetType(ArgsType...);
+};
+template <typename RetType, typename ObjType, typename... ArgsType>
+struct GetFunctionType<RetType (ObjType::*)(ArgsType...) const volatile> {
+    using type = RetType(ArgsType...);
+};
+template <typename RetType, typename ObjType, typename... ArgsType>
+struct GetFunctionType<RetType (ObjType::*)(ArgsType...)> {
     using type = RetType(ArgsType...);
 };
 } // namespace details
@@ -22,7 +34,7 @@ struct Function<RetType(ArgsType...)> {
     auto operator()(ArgsType&&... args) { return call(fn, args...); }
 };
 template <typename T>
-Function(T) -> Function<typename details::FunctionType<decltype(&T::operator())>::type>;
+Function(T) -> Function<typename details::GetFunctionType<decltype(&T::operator())>::type>;
 template <typename RetType, typename... ArgsType>
 Function(RetType (*)(ArgsType...)) -> Function<RetType(ArgsType...)>;
 } // namespace CTC
