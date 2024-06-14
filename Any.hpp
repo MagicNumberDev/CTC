@@ -17,20 +17,6 @@ struct Any {
     void (*destructor)(void*);
     void* (*copyConstructor)(void*);
     constexpr Any() : data(nullptr), type_hash(hash<std::nullptr_t>()), destructor(nullptr), copyConstructor(nullptr) {}
-    // template <typename T>
-    //     requires(!(std::same_as<T, Any&> && std::same_as<T, Any>))
-    // constexpr Any(T&& d)
-    // : data(new T(std::move(d))),
-    //   type_hash(hash<T>()),
-    //   destructor([](void* data) { delete ((T*)data); }),
-    //   copyConstructor([](void* data) -> void* { return new T(*((T*)data)); }) {}
-    // template <typename T>
-    //     requires(!(std::same_as<T, Any&> && std::same_as<T, Any>))
-    // constexpr Any(T& d)
-    // : data(new T(d)),
-    //   type_hash(hash<T>()),
-    //   destructor([](void* data) { delete ((T*)data); }),
-    //   copyConstructor([](void* data) -> void* { return new T(*((T*)data)); }) {}
     constexpr ~Any() {
         if (data) destructor(data);
     }
