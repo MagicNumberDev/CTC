@@ -36,6 +36,15 @@ struct CTVec : basic_CTC_container {
     constexpr CTVec(Ts... args) {
         details::setter<0>(data, args...);
     }
+    template <size_type NewStringLength>
+        requires(NewStringLength <= length)
+    constexpr CTVec<value_type, NewStringLength> split(size_type s) {
+        CTVec<value_type, NewStringLength> res = {};
+        for (size_type i = 0; i < NewStringLength; i++) {
+            res[i] = data[s + i];
+        }
+        return res;
+    }
 };
 template <typename T, typename... Ts>
 CTVec(T first, Ts... rest) -> CTVec<std::remove_cvref_t<T>, sizeof...(Ts) + 1>;
