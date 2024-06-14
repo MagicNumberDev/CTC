@@ -36,6 +36,15 @@ struct CTStr : basic_CTC_container {
         for (size_type i = 0; i < L - 1; i++) buffer.data[i] = data[i];
         return buffer;
     }
+    template <size_type NewStringLength>
+        requires(NewStringLength <= length)
+    constexpr CTStr<value_type, NewStringLength + 1> split(size_type s) {
+        CTStr<value_type, NewStringLength + 1> res = {};
+        for (size_type i = 0; i < NewStringLength; i++) {
+            res[i] = data[s + i];
+        }
+        return res;
+    }
 };
 template <typename T, auto N>
 CTStr(T (&)[N]) -> CTStr<std::remove_cvref_t<T>, N>;
