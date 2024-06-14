@@ -26,6 +26,15 @@ struct CTCStr : basic_CTC_container {
     constexpr operator auto() { return data; }
     constexpr operator const auto() const { return data; }
     constexpr const auto c_str() { return data; }
+    template <size_type NewStringLength>
+        requires(NewStringLength <= length)
+    constexpr CTCStr<value_type, NewStringLength + 1> split(size_type s) {
+        CTCStr<value_type, NewStringLength + 1> res = {};
+        for (size_type i = 0; i < NewStringLength; i++) {
+            res[i] = data[s + i];
+        }
+        return res;
+    }
 };
 template <typename T, auto N>
 CTCStr(T (&)[N]) -> CTCStr<std::remove_cvref_t<T>, N>;
