@@ -38,7 +38,7 @@ struct CTStr : basic_CTC_container {
     }
     template <size_type NewStringLength>
         requires(NewStringLength <= length)
-    constexpr CTStr<value_type, NewStringLength + 1> split(size_type s) {
+    constexpr CTStr<value_type, NewStringLength + 1> substr(size_type s) {
         CTStr<value_type, NewStringLength + 1> res = {};
         for (size_type i = 0; i < NewStringLength; i++) {
             res[i] = data[s + i];
