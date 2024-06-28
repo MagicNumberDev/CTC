@@ -28,7 +28,7 @@ struct CTCStr : basic_CTC_container {
     constexpr const auto c_str() { return data; }
     template <size_type NewStringLength>
         requires(NewStringLength <= length)
-    constexpr CTCStr<value_type, NewStringLength + 1> split(size_type s) {
+    constexpr CTCStr<value_type, NewStringLength + 1> substr(size_type s) {
         CTCStr<value_type, NewStringLength + 1> res = {};
         for (size_type i = 0; i < NewStringLength; i++) {
             res[i] = data[s + i];
