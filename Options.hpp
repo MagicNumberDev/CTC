@@ -6,7 +6,6 @@
 #include <string>
 
 
-
 #define EXPECTION(COND, VALUE)                                                                                         \
     [&] {                                                                                                              \
         if (COND) try {                                                                                                \
@@ -66,8 +65,8 @@ struct OptVal {
 
 template <typename T, typename U>
 struct Parser {
-    T argc;
-    U argv;
+    T   argc;
+    U** argv;
 
 
     template <auto first_opt, auto... opt>
@@ -101,20 +100,37 @@ struct Parser {
     }
     template <auto first_opt, auto... opt>
     bool exist() {
-        for (T i = 0; i < argc; i++) {
-            if (std::strlen(argv[i]) < first_opt.length) continue;
-            bool match = true;
-            for (::std::size_t j = 0; j < std::strlen(argv[i]); j++) {
-                if (argv[i][j] != first_opt[j]) {
-                    match = false;
-                    break;
+        if constexpr (std::is_same_v<std::remove_cvref_t<U>, char>) {
+            for (T i = 0; i < argc; i++) {
+                if (std::strlen(argv[i]) < first_opt.length) continue;
+                bool match = true;
+                for (::std::size_t j = 0; j < std::strlen(argv[i]); j++) {
+                    if (argv[i][j] != first_opt[j]) {
+                        match = false;
+                        break;
+                    }
                 }
+                if (std::strlen(argv[i]) > first_opt.length && argv[i][std::strlen(argv[i]) + 1] != '=') match = false;
+                if (match) return true;
             }
-            if (std::strlen(argv[i]) > first_opt.length && argv[i][std::strlen(argv[i]) + 1] != '=') match = false;
-            if (match) return true;
+            if constexpr (sizeof...(opt) != 0) return exist<opt...>();
+            else return false;
+        } else {
+            for (T i = 0; i < argc; i++) {
+                if (std::wcslen(argv[i]) < first_opt.length) continue;
+                bool match = true;
+                for (::std::size_t j = 0; j < std::wcslen(argv[i]); j++) {
+                    if (argv[i][j] != first_opt[j]) {
+                        match = false;
+                        break;
+                    }
+                }
+                if (std::wcslen(argv[i]) > first_opt.length && argv[i][std::wcslen(argv[i]) + 1] != '=') match = false;
+                if (match) return true;
+            }
+            if constexpr (sizeof...(opt) != 0) return exist<opt...>();
+            else return false;
         }
-        if constexpr (sizeof...(opt) != 0) return exist<opt...>();
-        else return false;
     }
 };
 
