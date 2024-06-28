@@ -38,7 +38,7 @@ struct CTVec : basic_CTC_container {
     }
     template <size_type NewStringLength>
         requires(NewStringLength <= length)
-    constexpr CTVec<value_type, NewStringLength> split(size_type s) {
+    constexpr CTVec<value_type, NewStringLength> subvec(size_type s) {
         CTVec<value_type, NewStringLength> res = {};
         for (size_type i = 0; i < NewStringLength; i++) {
             res[i] = data[s + i];
