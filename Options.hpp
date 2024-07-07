@@ -48,8 +48,14 @@ struct Expection {
 
 template <typename T>
 struct OptVal {
-    T    data;
-    auto tos() { return EXPECTION(data != nullptr, std::string(data)); }
+    const T* data;
+    auto     tos() {
+        if constexpr (std::is_same_v<std::remove_cvref_t<T>, char>) {
+            return EXPECTION(data != nullptr, std::string(data));
+        } else {
+            return EXPECTION(data != nullptr, std::wstring(data));
+        }
+    }
     auto toi() { return EXPECTION(data != nullptr, std::stoi(data)); }
     auto tol() { return EXPECTION(data != nullptr, std::stol(data)); }
     auto toll() { return EXPECTION(data != nullptr, std::stoll(data)); }
@@ -58,48 +64,87 @@ struct OptVal {
     auto tod() { return EXPECTION(data != nullptr, std::stod(data)); }
     auto tof() { return EXPECTION(data != nullptr, std::stof(data)); }
     auto told() { return EXPECTION(data != nullptr, std::stold(data)); }
-    auto tob() { return EXPECTION(data != nullptr, std::strcmp(data, "true") == 0); }
+    auto tob() {
+        if constexpr (std::is_same_v<std::remove_cvref_t<T>, char>) {
+            return EXPECTION(data != nullptr, std::strcmp(data, "true") == 0);
+        } else {
+            return EXPECTION(data != nullptr, std::wcscmp(data, "true") == 0);
+        }
+    }
     auto top() { return EXPECTION(data != nullptr, std::filesystem::path(data)); }
     auto empty() { return data == nullptr || data[0] == '\0'; }
+};
+
+struct ExistResult {
+    bool exist;
+    bool has_arg;
+    constexpr operator bool() { return exist; }
 };
 
 template <typename T, typename U>
 struct Parser {
     T   argc;
     U** argv;
-
-
     template <auto first_opt, auto... opt>
-    OptVal<const char*> get() {
-        const char* r = nullptr;
-        for (T i = 0; i < argc; i++) {
-            bool not_match = false;
-            T    index     = 0;
-            for (auto c : first_opt) {
-                if (argv[i][index] != c || argv[i][index] == '\0') {
-                    not_match = true;
-                    break;
+    OptVal<U> get() {
+        if constexpr (std::is_same_v<std::remove_cvref_t<U>, char>) {
+            const char* r = nullptr;
+            for (T i = 0; i < argc; i++) {
+                bool not_match = false;
+                T    index     = 0;
+                for (auto c : first_opt) {
+                    if (argv[i][index] != c || argv[i][index] == '\0') {
+                        not_match = true;
+                        break;
+                    }
+                    index++;
                 }
-                index++;
+                if (not_match) continue;
+                if (argv[i][index] != '=' || argv[i][index] == '\0'
+                    || (argv[i][index] == '=' && argv[i][index + 1] == '\0'))
+                    r = nullptr;
+                else r = &argv[i][(argv[i][index] == '=' ? index + 1 : index)];
             }
-            if (not_match) continue;
-            if (argv[i][index] != '=' || argv[i][index] == '\0'
-                || (argv[i][index] == '=' && argv[i][index + 1] == '\0'))
-                r = nullptr;
-            else r = &argv[i][(argv[i][index] == '=' ? index + 1 : index)];
-        }
-        if (r == nullptr) {
-            if constexpr (sizeof...(opt) != 0) {
-                return get<opt...>();
+            if (r == nullptr) {
+                if constexpr (sizeof...(opt) != 0) {
+                    return get<opt...>();
+                } else {
+                    return {nullptr};
+                }
             } else {
-                return {nullptr};
+                return {r};
             }
         } else {
-            return {r};
+            const wchar_t* r = nullptr;
+            for (T i = 0; i < argc; i++) {
+                bool not_match = false;
+                T    index     = 0;
+                for (auto c : first_opt) {
+                    if (argv[i][index] != c || argv[i][index] == '\0') {
+                        not_match = true;
+                        break;
+                    }
+                    index++;
+                }
+                if (not_match) continue;
+                if (argv[i][index] != '=' || argv[i][index] == '\0'
+                    || (argv[i][index] == '=' && argv[i][index + 1] == '\0'))
+                    r = nullptr;
+                else r = &argv[i][(argv[i][index] == '=' ? index + 1 : index)];
+            }
+            if (r == nullptr) {
+                if constexpr (sizeof...(opt) != 0) {
+                    return get<opt...>();
+                } else {
+                    return {nullptr};
+                }
+            } else {
+                return {r};
+            }
         }
     }
     template <auto first_opt, auto... opt>
-    bool exist() {
+    ExistResult exist() {
         if constexpr (std::is_same_v<std::remove_cvref_t<U>, char>) {
             for (T i = 0; i < argc; i++) {
                 if (std::strlen(argv[i]) < first_opt.length) continue;
@@ -111,10 +156,11 @@ struct Parser {
                     }
                 }
                 if (std::strlen(argv[i]) > first_opt.length && argv[i][std::strlen(argv[i]) + 1] != '=') match = false;
-                if (match) return true;
+                if (match)
+                    return {true, std::strlen(argv[i]) > first_opt.length && argv[i][std::strlen(argv[i]) + 1] == '='};
             }
             if constexpr (sizeof...(opt) != 0) return exist<opt...>();
-            else return false;
+            else return {false, false};
         } else {
             for (T i = 0; i < argc; i++) {
                 if (std::wcslen(argv[i]) < first_opt.length) continue;
@@ -126,10 +172,11 @@ struct Parser {
                     }
                 }
                 if (std::wcslen(argv[i]) > first_opt.length && argv[i][std::wcslen(argv[i]) + 1] != '=') match = false;
-                if (match) return true;
+                if (match)
+                    return {true, std::wcslen(argv[i]) > first_opt.length && argv[i][std::wcslen(argv[i]) + 1] == '='};
             }
             if constexpr (sizeof...(opt) != 0) return exist<opt...>();
-            else return false;
+            else return {false, false};
         }
     }
 };
