@@ -39,7 +39,7 @@ consteval auto name_of() {
     return res;
 }
 template <typename T>
-static consteval unsigned long long hash_of() {
+consteval unsigned long long hash_of() {
     unsigned long long hash = 1024;
     for (unsigned long long c : name_of<T>()) hash += (hash << 4) + c;
     return hash;
@@ -54,7 +54,7 @@ consteval auto name_of() {
     return res;
 }
 template <auto T>
-static consteval unsigned long long hash_of() {
+consteval unsigned long long hash_of() {
     unsigned long long hash = 1024;
     for (unsigned long long c : name_of<T>()) hash += (hash << 4) + c;
     return hash;
