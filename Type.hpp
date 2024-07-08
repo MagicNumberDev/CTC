@@ -26,7 +26,7 @@ consteval auto name_of() {
     CTStr<char, decltype(details::name<T>())::length - details::unused_part_length> res = {};
     auto                                                                            t   = details::name<T>();
     for (auto i = 0; i < decltype(res)::length; i++) {
-        res[i] = t[i + details::typename_begin_index];
+        res.data[i] = t.data[i + details::typename_begin_index];
     }
     return res;
 }
