@@ -27,12 +27,12 @@ constexpr auto typename_begin_index = [] {
         else res++;
     std::unreachable();
 }();
-constexpr auto unused_part_length = decltype(name<int>())::length - 4;
+constexpr auto unused_part_length = decltype(name<int>())::length - 3;
 } // namespace details
 template <typename T>
 consteval auto name_of() {
-    CTCStr<char, decltype(details::name<T>())::length - details::unused_part_length> res = {};
-    auto                                                                             t   = details::name<T>();
+    CTCStr<char, decltype(details::name<T>())::length - details::unused_part_length + 1> res = {};
+    auto                                                                                 t   = details::name<T>();
     for (auto i = 0; i < decltype(res)::length; i++) {
         res.data[i] = t.data[i + details::typename_begin_index];
     }
