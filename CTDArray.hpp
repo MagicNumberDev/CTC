@@ -1,8 +1,10 @@
 #pragma once
+#include <algorithm>
 #include <cstdlib>
 #include <limits>
 #include <tuple>
 #include <utility>
+
 namespace CTC {
 
 template <typename T, typename STYPE = ::std::size_t>
