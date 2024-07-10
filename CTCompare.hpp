@@ -13,4 +13,8 @@ template <details::CTCC T, details::CTCC U>
     if (*ai > *bi) return std::weak_ordering::greater;
     else return std::weak_ordering::less;
 }
+template <details::CTCC T, details::CTCC U>
+[[nodiscard]] constexpr bool operator==(const T& a, const U& b) {
+    return a <= b && b <= a;
+}
 } // namespace CTC
