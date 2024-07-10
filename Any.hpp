@@ -1,35 +1,27 @@
 #pragma once
+#include "Type.hpp"
 #include <utility>
+
 namespace CTC {
 struct Any {
     template <typename T>
     static consteval unsigned long long hash() {
-        unsigned long long hash = 1024;
-#ifdef _MSC_VER
-        for (unsigned long long c : __FUNCSIG__) hash += (hash << 4) + c;
-#else
-        for (unsigned long long c : __PRETTY_FUNCTION__) hash += (hash << 4) + c;
-#endif
-        return hash;
+        return hash_of<T>();
     }
     void*              data;
     unsigned long long type_hash;
-    void (*destructor)(void*);
-    void* (*copyConstructor)(void*);
-    constexpr Any() : data(nullptr), type_hash(hash<std::nullptr_t>()), destructor(nullptr), copyConstructor(nullptr) {}
+    void (*deleter)(void*);
+    void* (*copier)(void*);
+    constexpr Any() : data(nullptr), type_hash(hash<std::nullptr_t>()), deleter(nullptr), copier(nullptr) {}
     constexpr ~Any() {
-        if (data) destructor(data);
+        if (data) deleter(data);
     }
     constexpr Any(const Any& o)
-    : data(o.data == nullptr ? nullptr : o.copyConstructor(o.data)),
+    : data(o.data == nullptr ? nullptr : o.copier(o.data)),
       type_hash(o.type_hash),
-      destructor(o.destructor),
-      copyConstructor(o.copyConstructor) {}
-    constexpr Any(Any&& o)
-    : data(o.data),
-      type_hash(o.type_hash),
-      destructor(o.destructor),
-      copyConstructor(o.copyConstructor) {
+      deleter(o.deleter),
+      copier(o.copier) {}
+    constexpr Any(Any&& o) : data(o.data), type_hash(o.type_hash), deleter(o.deleter), copier(o.copier) {
         o.data = nullptr;
     }
     template <typename T>
@@ -37,15 +29,15 @@ struct Any {
     constexpr Any(T&& d)
     : data(new T(std::move(d))),
       type_hash(hash<T>()),
-      destructor([](void* data) { delete ((T*)data); }),
-      copyConstructor([](void* data) -> void* { return new T(*((T*)data)); }) {}
+      deleter([](void* data) { delete ((T*)data); }),
+      copier([](void* data) -> void* { return new T(*((T*)data)); }) {}
     template <typename T>
         requires(!(std::same_as<T, Any&> || std::same_as<T, Any>))
     constexpr Any(T& d)
     : data(new T(d)),
       type_hash(hash<T>()),
-      destructor([](void* data) { delete ((T*)data); }),
-      copyConstructor([](void* data) -> void* { return new T(*((T*)data)); }) {}
+      deleter([](void* data) { delete ((T*)data); }),
+      copier([](void* data) -> void* { return new T(*((T*)data)); }) {}
     template <typename T>
     constexpr operator T*() {
         if (hash<T>() == type_hash) return (T*)data;
@@ -91,18 +83,18 @@ struct Any {
         return type_hash == hash<T>();
     }
     constexpr auto& operator=(const Any& o) {
-        data            = o.data == nullptr ? nullptr : o.copyConstructor(o.data);
-        type_hash       = o.type_hash;
-        destructor      = o.destructor;
-        copyConstructor = o.copyConstructor;
+        data      = o.data == nullptr ? nullptr : o.copier(o.data);
+        type_hash = o.type_hash;
+        deleter   = o.deleter;
+        copier    = o.copier;
         return *this;
     }
     constexpr auto& operator=(Any&& o) {
-        data            = o.data;
-        type_hash       = o.type_hash;
-        destructor      = o.destructor;
-        copyConstructor = o.copyConstructor;
-        o.data          = nullptr;
+        data      = o.data;
+        type_hash = o.type_hash;
+        deleter   = o.deleter;
+        copier    = o.copier;
+        o.data    = nullptr;
         return *this;
     }
 };
