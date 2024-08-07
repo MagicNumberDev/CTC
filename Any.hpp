@@ -25,15 +25,15 @@ struct Any {
         o.data = nullptr;
     }
     template <typename T>
-        requires(!(std::same_as<T, Any&> || std::same_as<T, Any>))
+        requires(!std::is_same_v<T, Any>)
     constexpr Any(T&& d)
     : data(new T(std::move(d))),
       type_hash(hash<T>()),
       deleter([](void* data) { delete ((T*)data); }),
       copier([](void* data) -> void* { return new T(*((T*)data)); }) {}
     template <typename T>
-        requires(!(std::same_as<T, Any&> || std::same_as<T, Any>))
-    constexpr Any(T& d)
+        requires(!std::is_same_v<T, Any>)
+    constexpr Any(const T& d)
     : data(new T(d)),
       type_hash(hash<T>()),
       deleter([](void* data) { delete ((T*)data); }),
