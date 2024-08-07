@@ -10,6 +10,7 @@ template <typename T>
 id_t id_of = CTC::hash_of<T>();
 
 struct Object {
+private:
     static inline std::unordered_set<id_t>                         registered = {id_of<nullptr_t>};
     static inline std::unordered_map<id_t, void (*)(void*)>        deleters;
     static inline std::unordered_map<id_t, void* (*)(void*)>       copiers;
@@ -17,10 +18,13 @@ struct Object {
     static inline std::unordered_map<void*, int>                   refcounts;
     id_t                                                           id;
     void*                                                          data;
+    Object(id_t id, void* data) : id(id), data(data) { refcounts[data] = 1; }
+
+public:
     template <typename T>
         requires(!std::is_same_v<T, Object>)
-    Object(T& data) : id(id_of<T>),
-                      data(new T(data)) {
+    Object(const T& data) : id(id_of<T>),
+                            data(new T(data)) {
         if (!registered.contains(id)) {
             registered.insert(id);
             if constexpr (requires(T* a) { delete a; }) deleters[id] = [](void* v) -> void { delete (T*)v; };
@@ -53,11 +57,6 @@ struct Object {
             }
         }
     }
-
-private:
-    Object(id_t id, void* data) : id(id), data(data) { refcounts[data] = 1; }
-
-public:
     Object ref() {
         refcounts[data]++;
         return Object{id, data};
@@ -68,6 +67,13 @@ public:
         } else {
             return {id_of<std::nullptr_t>, nullptr};
         }
+    }
+    Object move() {
+        auto tid   = id;
+        auto tdata = data;
+        id         = id_of<std::nullptr_t>;
+        data       = nullptr;
+        return {tid, tdata};
     }
     template <typename T>
     T* cast() {
