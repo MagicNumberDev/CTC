@@ -33,9 +33,7 @@ template <typename T>
 consteval auto name_of() {
     CTCStr<char, decltype(details::name<T>())::length - details::unused_part_length + 1> res = {};
     auto                                                                                 t   = details::name<T>();
-    for (auto i = 0; i < decltype(res)::length; i++) {
-        res.data[i] = t.data[i + details::typename_begin_index];
-    }
+    for (auto i = 0; i < decltype(res)::length; i++) res.data[i] = t.data[i + details::typename_begin_index];
     return res;
 }
 template <typename T>
@@ -46,11 +44,9 @@ consteval unsigned long long hash_of() {
 }
 template <auto T>
 consteval auto name_of() {
-    CTCStr<char, decltype(details::name<T>())::length - details::unused_part_length> res = {};
-    auto                                                                             t   = details::name<T>();
-    for (auto i = 0; i < decltype(res)::length; i++) {
-        res.data[i] = t.data[i + details::typename_begin_index];
-    }
+    CTCStr<char, decltype(details::name<T>())::length - details::unused_part_length + 1> res = {};
+    auto                                                                                 t   = details::name<T>();
+    for (auto i = 0; i < decltype(res)::length; i++) res.data[i] = t.data[i + details::typename_begin_index];
     return res;
 }
 template <auto T>
@@ -59,4 +55,81 @@ consteval unsigned long long hash_of() {
     for (unsigned long long c : name_of<T>()) hash += (hash << 4) + c;
     return hash;
 }
+namespace details {
+template <auto I>
+struct Index {};
+template <typename T>
+struct Type {
+    using type = T;
+};
+template <auto I, typename... Ts>
+struct TypeContainerBase;
+template <auto I, typename T, typename... Ts>
+struct TypeContainerBase<I, T, Ts...> : TypeContainerBase<I + 1, Ts...> {
+    using TypeContainerBase<I + 1, Ts...>::get;
+    static auto get(Index<I>) { return Type<T>{}; }
+};
+template <auto I, typename T>
+struct TypeContainerBase<I, T> {
+    static auto get(Index<I>) { return Type<T>{}; }
+};
+template <typename T>
+concept HasValueType = requires { typename T::value_type; };
+} // namespace details
+template <typename... Ts>
+struct TypeContainer : details::TypeContainerBase<0, Ts...> {
+    using details::TypeContainerBase<0, Ts...>::get;
+    template <auto I>
+    using type = decltype(get(details::Index<I>{}))::type;
+};
+template <typename T>
+struct value_type_of {
+    using type = void;
+};
+template <details::HasValueType T>
+struct value_type_of<T> {
+    using type = typename T::value_type;
+};
+template <typename T>
+using value_type_of_t = typename value_type_of<T>::type;
+namespace details {
+template <typename T>
+struct FunctionInfoBase;
+template <typename RetType, typename... ArgsType>
+struct FunctionInfoBase<RetType (*)(ArgsType...)> {
+    using args                 = TypeContainer<ArgsType...>;
+    constexpr static auto argc = sizeof...(ArgsType);
+    using ret                  = RetType;
+};
+template <typename RetType, typename ObjType, typename... ArgsType>
+struct FunctionInfoBase<RetType (ObjType::*)(ArgsType...) const> {
+    using args                 = TypeContainer<ArgsType...>;
+    constexpr static auto argc = sizeof...(ArgsType);
+    using ret                  = RetType;
+};
+template <typename RetType, typename ObjType, typename... ArgsType>
+struct FunctionInfoBase<RetType (ObjType::*)(ArgsType...) volatile> {
+    constexpr static auto argc = sizeof...(ArgsType);
+    using args                 = TypeContainer<ArgsType...>;
+    using ret                  = RetType;
+};
+template <typename RetType, typename ObjType, typename... ArgsType>
+struct FunctionInfoBase<RetType (ObjType::*)(ArgsType...) const volatile> {
+    using args                 = TypeContainer<ArgsType...>;
+    constexpr static auto argc = sizeof...(ArgsType);
+    using ret                  = RetType;
+};
+template <typename RetType, typename ObjType, typename... ArgsType>
+struct FunctionInfoBase<RetType (ObjType::*)(ArgsType...)> {
+    using args                 = TypeContainer<ArgsType...>;
+    constexpr static auto argc = sizeof...(ArgsType);
+    using ret                  = RetType;
+};
+} // namespace details
+template <typename T>
+struct FunctionInfo {
+    using args                 = details::FunctionInfoBase<T>::args;
+    constexpr static auto argc = details::FunctionInfoBase<T>::args;
+    using ret                  = details::FunctionInfoBase<T>::ret;
+};
 } // namespace CTC
