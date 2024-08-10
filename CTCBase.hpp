@@ -32,7 +32,9 @@ struct TypeContainer : details::TypeContainerBase<0, Ts...> {
     using type = decltype(get(details::Index<I>{}))::type;
 };
 template <typename T>
-struct value_type_of;
+struct value_type_of {
+    using type = void;
+};
 template <details::HasValueType T>
 struct value_type_of<T> {
     using type = typename T::value_type;
