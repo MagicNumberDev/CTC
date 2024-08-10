@@ -5,9 +5,9 @@
 #include <utility>
 
 namespace AnyObject {
-using id_t = unsigned long long;
+using id_t = decltype(CTC::hash_of<void>());
 template <typename T>
-id_t id_of = CTC::hash_of<T>();
+constexpr id_t id_of = CTC::hash_of<T>();
 
 struct Object {
 private:
