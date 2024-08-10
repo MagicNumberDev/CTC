@@ -82,6 +82,8 @@ struct TypeContainer : details::TypeContainerBase<0, Ts...> {
     template <auto I>
     using type = decltype(get(details::Index<I>{}))::type;
 };
+template <>
+struct TypeContainer<> {};
 template <typename T>
 struct value_type_of {
     using type = void;
@@ -95,12 +97,6 @@ using value_type_of_t = typename value_type_of<T>::type;
 namespace details {
 template <typename T>
 struct FunctionInfoBase;
-template <typename RetType, typename... ArgsType>
-struct FunctionInfoBase<RetType (*)(ArgsType...)> {
-    using args                 = TypeContainer<ArgsType...>;
-    constexpr static auto argc = sizeof...(ArgsType);
-    using ret                  = RetType;
-};
 template <typename RetType, typename ObjType, typename... ArgsType>
 struct FunctionInfoBase<RetType (ObjType::*)(ArgsType...) const> {
     using args                 = TypeContainer<ArgsType...>;
@@ -125,11 +121,41 @@ struct FunctionInfoBase<RetType (ObjType::*)(ArgsType...)> {
     constexpr static auto argc = sizeof...(ArgsType);
     using ret                  = RetType;
 };
+template <typename T>
+using CallableObjectHelper = decltype(&T::operator());
+template <typename T>
+concept IsCallableObject = requires { typename CallableObjectHelper<T>; };
 } // namespace details
 template <typename T>
-struct FunctionInfo {
-    using args                 = details::FunctionInfoBase<T>::args;
-    constexpr static auto argc = details::FunctionInfoBase<T>::args;
-    using ret                  = details::FunctionInfoBase<T>::ret;
+struct FunctionInfo;
+template <details::IsCallableObject T>
+struct FunctionInfo<T> {
+    using args                 = details::FunctionInfoBase<details::CallableObjectHelper<T>>::args;
+    constexpr static auto argc = details::FunctionInfoBase<details::CallableObjectHelper<T>>::argc;
+    using ret                  = details::FunctionInfoBase<details::CallableObjectHelper<T>>::ret;
+};
+template <typename RetType, typename... ArgsType>
+struct FunctionInfo<RetType (*)(ArgsType...)> {
+    using args                 = TypeContainer<ArgsType...>;
+    constexpr static auto argc = sizeof...(ArgsType);
+    using ret                  = RetType;
+};
+template <typename RetType, typename... ArgsType>
+struct FunctionInfo<RetType(ArgsType...)> {
+    using args                 = TypeContainer<ArgsType...>;
+    constexpr static auto argc = sizeof...(ArgsType);
+    using ret                  = RetType;
+};
+template <typename RetType>
+struct FunctionInfo<RetType (*)()> {
+    using args                 = TypeContainer<>;
+    constexpr static auto argc = 0;
+    using ret                  = RetType;
+};
+template <typename RetType>
+struct FunctionInfo<RetType()> {
+    using args                 = TypeContainer<>;
+    constexpr static auto argc = 0;
+    using ret                  = RetType;
 };
 } // namespace CTC
