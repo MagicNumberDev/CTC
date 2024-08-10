@@ -22,7 +22,7 @@ private:
 
 public:
     template <typename T>
-        requires(!std::is_same_v<T, Object>)
+        requires(!std::is_same_v<std::remove_cvref_t<T>, Object>)
     Object(const T& data) : id(id_of<T>),
                             data(new T(data)) {
         if (!registered.contains(id)) {
@@ -35,7 +35,7 @@ public:
         refcounts[this->data] = 1;
     }
     template <typename T>
-        requires(!std::is_same_v<T, Object>)
+        requires(!std::is_same_v<std::remove_cvref_t<T>, Object> && !std::is_reference_v<T>)
     Object(T&& data) : id(id_of<T>),
                        data(new T(std::move(data))) {
         if (!registered.contains(id)) {
