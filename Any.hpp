@@ -28,14 +28,14 @@ struct Any {
         std::swap(copier, o.copier);
     }
     template <typename T>
-        requires(!std::is_same_v<T, Any>)
+        requires(!std::is_same_v<std::remove_cvref_t<T>, Any> && !std::is_reference_v<T>)
     constexpr Any(T&& d)
     : data(new T(std::move(d))),
       type_hash(hash<T>()),
       deleter([](void* data) { delete ((T*)data); }),
       copier([](void* data) -> void* { return new T(*((T*)data)); }) {}
     template <typename T>
-        requires(!std::is_same_v<T, Any>)
+        requires(!std::is_same_v<std::remove_cvref_t<T>, Any>)
     constexpr Any(const T& d)
     : data(new T(d)),
       type_hash(hash<T>()),
