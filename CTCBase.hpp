@@ -38,5 +38,5 @@ struct value_type_of<T> {
     using type = typename T::value_type;
 };
 template <typename T>
-using value_type_of_v = typename value_type_of<T>::type;
+using value_type_of_t = typename value_type_of<T>::type;
 } // namespace CTC
