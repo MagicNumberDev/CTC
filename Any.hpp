@@ -21,8 +21,11 @@ struct Any {
       type_hash(o.type_hash),
       deleter(o.deleter),
       copier(o.copier) {}
-    constexpr Any(Any&& o) : data(o.data), type_hash(o.type_hash), deleter(o.deleter), copier(o.copier) {
-        o.data = nullptr;
+    constexpr Any(Any&& o) {
+        std::swap(data, o.data);
+        std::swap(type_hash, o.type_hash);
+        std::swap(deleter, o.deleter);
+        std::swap(copier, o.copier);
     }
     template <typename T>
         requires(!std::is_same_v<T, Any>)
@@ -90,11 +93,10 @@ struct Any {
         return *this;
     }
     constexpr auto& operator=(Any&& o) {
-        data      = o.data;
-        type_hash = o.type_hash;
-        deleter   = o.deleter;
-        copier    = o.copier;
-        o.data    = nullptr;
+        std::swap(data, o.data);
+        std::swap(type_hash, o.type_hash);
+        std::swap(deleter, o.deleter);
+        std::swap(copier, o.copier);
         return *this;
     }
 };
