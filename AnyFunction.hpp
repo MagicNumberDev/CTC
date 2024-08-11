@@ -6,8 +6,8 @@
 namespace CTC {
 namespace details {
 
-template <auto I, auto Argc, typename T>
-constexpr auto any_call_base(T& fn, CTDArray<Any>& args, auto&... pack) -> Any {
+template <auto I, auto Argc>
+constexpr auto any_call_base(auto& fn, CTDArray<Any>& args, auto&... pack) -> Any {
     if constexpr (I < Argc) {
         if constexpr (sizeof...(pack) == 0) {
             return any_call_base<I + 1, Argc>(fn, args, args[I]);
