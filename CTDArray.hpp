@@ -42,8 +42,8 @@ public:
         setter<0>(data_, args...);
     }
     constexpr ~CTDArray() { delete_if_has_data(); }
-    constexpr auto&       operator[](size_type i) { return &data_[i]; }
-    constexpr const auto& operator[](size_type i) const { return &data_[i]; }
+    constexpr auto&       operator[](size_type i) { return data_[i]; }
+    constexpr const auto& operator[](size_type i) const { return data_[i]; }
     constexpr auto        begin() { return &data_[0]; }
     constexpr const auto  begin() const { return &data_[0]; }
     constexpr auto        end() { return &data_[size_]; }
