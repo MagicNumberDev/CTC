@@ -2,24 +2,34 @@
 #include "Any.hpp"
 #include "CTDArray.hpp"
 #include "Type.hpp"
-#include <functional>
 
 namespace CTC {
 namespace details {
 
 template <auto I, auto Argc, typename T>
-constexpr auto any_call_base(T& fn, CTDArray<Any>& args) -> Any {
+constexpr auto any_call_base(T& fn, CTDArray<Any>& args, auto&... pack) -> Any {
     if constexpr (I < Argc) {
-        auto tfn = std::bind_front(fn, args[I]);
-        return any_call_base<I + 1, Argc>(tfn, args);
-    } else {
-        if constexpr (std::is_same_v<void, decltype(fn())>) {
-            fn();
-            return {};
+        if constexpr (sizeof...(pack) == 0) {
+            return any_call_base<I + 1, Argc>(fn, args, args[I]);
         } else {
-            return {fn()};
+            return any_call_base<I + 1, Argc>(fn, args, pack..., args[I]);
         }
-        return {};
+    } else {
+        if constexpr (sizeof...(pack) > 0) {
+            if constexpr (std::is_same_v<void, decltype(fn(pack...))>) {
+                fn(pack...);
+                return {};
+            } else {
+                return {fn(pack...)};
+            }
+        } else {
+            if constexpr (std::is_same_v<void, decltype(fn())>) {
+                fn();
+                return {};
+            } else {
+                return {fn()};
+            }
+        }
     }
 }
 template <typename T>
