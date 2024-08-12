@@ -37,9 +37,9 @@ consteval auto name_of() {
     return res;
 }
 template <typename T>
-consteval unsigned long long hash_of() {
-    unsigned long long hash = 1024;
-    for (unsigned long long c : name_of<T>()) hash += (hash << 4) + c;
+consteval std::size_t hash_of() {
+    std::size_t hash = 1024;
+    for (std::size_t c : name_of<T>()) hash += (hash << 4) + c;
     return hash;
 }
 template <auto T>
@@ -50,13 +50,13 @@ consteval auto name_of() {
     return res;
 }
 template <auto T>
-consteval unsigned long long hash_of() {
-    unsigned long long hash = 1024;
-    for (unsigned long long c : name_of<T>()) hash += (hash << 4) + c;
+consteval std::size_t hash_of() {
+    std::size_t hash = 1024;
+    for (std::size_t c : name_of<T>()) hash += (hash << 4) + c;
     return hash;
 }
 namespace details {
-template <auto I>
+template <std::size_t I>
 struct Index {};
 template <typename T>
 struct Type {
