@@ -25,8 +25,8 @@ struct CTVec : basic_CTC_container {
     constexpr auto        end() { return &data[L]; }
     constexpr const auto  cend() const { return &data[L]; }
     constexpr const auto  end() const { return &data[L]; }
-    constexpr operator auto() { return data; }
-    constexpr operator const auto() const { return data; }
+    constexpr             operator auto() { return data; }
+    constexpr             operator const auto() const { return data; }
     constexpr CTVec()                        = default;
     constexpr CTVec(const CTVec&)            = default;
     constexpr CTVec(CTVec&&)                 = default;

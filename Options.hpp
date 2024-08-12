@@ -76,8 +76,8 @@ struct OptVal {
 };
 
 struct ExistResult {
-    bool exist;
-    bool has_arg;
+    bool      exist;
+    bool      has_arg;
     constexpr operator bool() { return exist; }
 };
 

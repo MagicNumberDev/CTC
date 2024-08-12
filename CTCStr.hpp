@@ -23,9 +23,9 @@ struct CTCStr : basic_CTC_container {
     constexpr auto        end() { return &data[L - 1]; }
     constexpr const auto  cend() const { return &data[L - 1]; }
     constexpr const auto  end() const { return &data[L - 1]; }
-    constexpr operator auto() { return data; }
-    constexpr operator const auto() const { return data; }
-    constexpr const auto c_str() { return data; }
+    constexpr             operator auto() { return data; }
+    constexpr             operator const auto() const { return data; }
+    constexpr const auto  c_str() { return data; }
     template <size_type NewStringLength>
         requires(NewStringLength <= length)
     constexpr CTCStr<value_type, NewStringLength + 1> substr(size_type s) {

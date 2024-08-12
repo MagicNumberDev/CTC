@@ -26,10 +26,10 @@ struct CTStr : basic_CTC_container {
     constexpr auto        end() { return &data[L - 1]; }
     constexpr const auto  cend() const { return &data[L - 1]; }
     constexpr const auto  end() const { return &data[L - 1]; }
-    constexpr operator auto() { return data; }
-    constexpr operator const auto() const { return data; }
-    constexpr const auto c_str() { return data; }
-    constexpr auto       as_zero_end_str() {
+    constexpr             operator auto() { return data; }
+    constexpr             operator const auto() const { return data; }
+    constexpr const auto  c_str() { return data; }
+    constexpr auto        as_zero_end_str() {
         struct {
             T data[L] = {0};
         } buffer;
