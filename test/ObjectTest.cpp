@@ -62,9 +62,9 @@ int main() {
     AnyObject::Object e{std::string("1000")};
     auto              r = e.type_cast<char*>();
     std::println("{}", *r.cast<char*>());
-    std::vector<AnyObject::Object*> a;
-    AnyObject::Object               test1(1);
-    a.push_back(&test1);
+    std::vector<AnyObject::Object> a;
+    AnyObject::Object              test1(1);
+    a.push_back(std::move(test1));
     AnyObject::CallableObject callobject([](const int& a) {
         printf("%d\n", a);
         return std::string("123");
@@ -72,10 +72,10 @@ int main() {
     auto                      res = callobject.call(a);
     printf("%s\n", res.cast<std::string>()->c_str());
     callobject.call(*AnyObject::CallableObject::make_args(1));
-    std::string                     s{};
-    std::vector<AnyObject::Object*> args;
+    std::string                    s{};
+    std::vector<AnyObject::Object> args;
     while (std::cin >> s) {
-        args.push_back(new AnyObject::Object(s));
+        args.emplace_back(s);
     }
     callobject.call(args);
 }
