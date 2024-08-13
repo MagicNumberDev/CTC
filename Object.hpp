@@ -426,7 +426,7 @@ public:
         register_cast_rule(
             id_of<std::string>,
             id_of<double>,
-            [](const void* from) -> void* { return new double(std::stof(*static_cast<const std::string*>(from))); },
+            [](const void* from) -> void* { return new double(std::stod(*static_cast<const std::string*>(from))); },
             CastRuleType::Equal
         );
     }
