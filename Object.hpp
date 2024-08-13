@@ -274,19 +274,53 @@ public:
         register_normal_cast_rule<const char*, std::string, CastRuleType::Equal>();
         register_normal_cast_rule<char*, std::string, CastRuleType::Equal>();
 
+        register_cast_rule(
+            id_of<std::string>,
+            id_of<const char*>,
+            [](const void* from) -> void* {
+                auto res = new char*(new char[static_cast<const std::string*>(from)->size() + 1]{0});
+                for (std::size_t i = 0; i < static_cast<const std::string*>(from)->size(); i++) {
+                    (*res)[i] = (*static_cast<const std::string*>(from))[i];
+                }
+                return res;
+            },
+            CastRuleType::Equal
+        );
+        register_cast_rule(
+            id_of<std::string>,
+            id_of<char*>,
+            [](const void* from) -> void* {
+                auto res = new char*(new char[static_cast<const std::string*>(from)->size() + 1]{0});
+                for (std::size_t i = 0; i < static_cast<const std::string*>(from)->size(); i++) {
+                    (*res)[i] = (*static_cast<const std::string*>(from))[i];
+                }
+                return res;
+            },
+            CastRuleType::Equal
+        );
+
         copiers[id_of<char*>] = [](void* v) -> void* {
-            auto s    = (char*)v;
-            auto size = std::strlen(s);
-            auto r    = new char[size + 1]{0};
-            for (std::size_t i = 0; i < size; i++) r[i] = s[i];
-            return r;
+            auto size = std::strlen(*static_cast<char**>(v));
+            auto res  = new char*(new char[size + 1]{0});
+            for (std::size_t i = 0; i < size; i++) (*res)[i] = (*static_cast<char**>(v))[i];
+            return res;
         };
         copiers[id_of<const char*>] = [](void* v) -> void* {
-            auto s    = (char*)v;
-            auto size = std::strlen(s);
-            auto r    = new char[size + 1]{0};
-            for (std::size_t i = 0; i < size; i++) r[i] = s[i];
-            return r;
+            auto size = std::strlen(*static_cast<char**>(v));
+            auto res  = new char*(new char[size + 1]{0});
+            for (std::size_t i = 0; i < size; i++) (*res)[i] = (*static_cast<char**>(v))[i];
+            return res;
+        };
+
+        deleters[id_of<char*>] = [](void* v) -> void {
+            auto t = static_cast<char**>(v);
+            delete[] *t;
+            delete t;
+        };
+        deleters[id_of<const char*>] = [](void* v) -> void {
+            auto t = static_cast<char**>(v);
+            delete[] *t;
+            delete t;
         };
 
         register_cast_rule(
