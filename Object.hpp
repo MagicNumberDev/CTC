@@ -209,7 +209,10 @@ public:
     operator bool() { return data != nullptr; }
     Object()              = delete;
     Object(const Object&) = delete;
-    Object(Object&&)      = delete;
+    Object(Object&& o) {
+        std::swap(id, o.id);
+        std::swap(data, o.data);
+    }
     static inline void register_cast_rule(id_t from, id_t to, void* (*cast)(const void*), CastRuleType type) {
         castrules[{from, to}] = {cast, type};
     }
@@ -451,22 +454,22 @@ public:
 
 struct CallableObject : Object {
 private:
-    static inline std::unordered_map<id_t, Object (*)(Object&, std::vector<Object*>&)> callableObjects;
+    static inline std::unordered_map<id_t, Object (*)(Object&, std::vector<Object>&)> callableObjects;
 
     template <typename T, auto I>
-    static inline auto cast_helper(std::vector<Object*>& args) {
+    static inline auto cast_helper(std::vector<Object>& args) {
         auto res =
-            args[I]->template type_cast<std::remove_cvref_t<typename CTC::FunctionInfo<T>::args::template type<I>>>();
+            args[I].template type_cast<std::remove_cvref_t<typename CTC::FunctionInfo<T>::args::template type<I>>>();
         if (res)
             return *res.template cast<std::remove_cvref_t<typename CTC::FunctionInfo<T>::args::template type<I>>>();
         throw std::invalid_argument(
             std::
-                format("invalid type:at:{},from:{},to:{}.", I, args[I]->get_id(), id_of<std::remove_cvref_t<typename CTC::FunctionInfo<T>::args::template type<I>>>)
+                format("invalid type:at:{},from:{},to:{}.", I, args[I].get_id(), id_of<std::remove_cvref_t<typename CTC::FunctionInfo<T>::args::template type<I>>>)
         );
     }
     template <typename T, auto... I>
     void register_callable_object_type(std::index_sequence<I...>) {
-        callableObjects[get_id()] = [](Object& callable, std::vector<Object*>& args) -> Object {
+        callableObjects[get_id()] = [](Object& callable, std::vector<Object>& args) -> Object {
             if (args.size() != CTC::FunctionInfo<T>::argc) {
                 throw std::invalid_argument(
                     std::format("invalid argument count:need:{},given:{}.", CTC::FunctionInfo<T>::argc, args.size())
@@ -483,7 +486,7 @@ private:
 
 public:
     bool   is_callable() { return callableObjects.contains(get_id()); }
-    Object call(std::vector<Object*>& args) {
+    Object call(std::vector<Object>& args) {
         if (is_callable()) return callableObjects[get_id()](*this, args);
         return {nullptr};
     }
@@ -497,10 +500,10 @@ public:
     CallableObject(T&& data) : Object(std::move(data)) {
         register_callable_object_type<T>(std::make_index_sequence<CTC::FunctionInfo<T>::argc>{});
     }
-    static inline std::shared_ptr<std::vector<Object*>> make_args(const auto&... args) {
-        std::vector<Object*> targs;
-        (targs.push_back(new Object(args)), ...);
-        return std::make_shared<std::vector<Object*>>(std::move(targs));
+    static inline std::shared_ptr<std::vector<Object>> make_args(const auto&... args) {
+        std::vector<Object> targs;
+        (targs.emplace_back(args), ...);
+        return std::make_shared<std::vector<Object>>(std::move(targs));
     }
 };
 } // namespace AnyObject
