@@ -1,9 +1,13 @@
 #pragma once
 #include "Type.hpp"
+#include <format>
+#include <memory>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 namespace AnyObject {
 using id_t = decltype(CTC::hash_of<void>());
@@ -124,7 +128,10 @@ private:
         }
     };
 
+
 public:
+    id_t  get_id() { return id; }
+    void* get_data() { return data; }
     template <typename T>
         requires(!std::is_same_v<std::remove_cvref_t<T>, Object>)
     Object(const T& data) : id(id_of<T>),
@@ -199,7 +206,7 @@ public:
         }
         return {id_of<T>, res};
     }
-
+    operator bool() { return data != nullptr; }
     Object()              = delete;
     Object(const Object&) = delete;
     Object(Object&&)      = delete;
@@ -439,6 +446,61 @@ public:
             if constexpr (requires(T a, T b) { a == b; })
                 comparators[id_of<T>] = [](void* a, void* b) -> bool { return (*((T*)a)) == (*((T*)b)); };
         }
+    }
+};
+
+struct CallableObject : Object {
+private:
+    static inline std::unordered_map<id_t, Object (*)(Object&, std::vector<Object*>&)> callableObjects;
+
+    template <typename T, auto I>
+    static inline auto cast_helper(std::vector<Object*>& args) {
+        auto res =
+            args[I]->template type_cast<std::remove_cvref_t<typename CTC::FunctionInfo<T>::args::template type<I>>>();
+        if (res)
+            return *res.template cast<std::remove_cvref_t<typename CTC::FunctionInfo<T>::args::template type<I>>>();
+        throw std::invalid_argument(
+            std::
+                format("invalid type:at:{},from:{},to:{}.", I, args[I]->get_id(), id_of<std::remove_cvref_t<typename CTC::FunctionInfo<T>::args::template type<I>>>)
+        );
+    }
+    template <typename T, auto... I>
+    void register_callable_object_type(std::index_sequence<I...>) {
+        callableObjects[get_id()] = [](Object& callable, std::vector<Object*>& args) -> Object {
+            if (args.size() != CTC::FunctionInfo<T>::argc) {
+                throw std::invalid_argument(
+                    std::format("invalid argument count:need:{},given:{}", CTC::FunctionInfo<T>::argc, args.size())
+                );
+            }
+            if constexpr (std::is_same_v<typename CTC::FunctionInfo<T>::ret, void>) {
+                ((*callable.cast<T>())(cast_helper<T, I>(args)), ...);
+                return {nullptr};
+            } else {
+                return {((*callable.cast<T>())(cast_helper<T, I>(args)), ...)};
+            }
+        };
+    }
+
+public:
+    bool   is_callable() { return callableObjects.contains(get_id()); }
+    Object call(std::vector<Object*>& args) {
+        if (is_callable()) return callableObjects[get_id()](*this, args);
+        return {nullptr};
+    }
+    template <typename T>
+        requires(!std::is_same_v<std::remove_cvref_t<T>, CallableObject> && !std::is_same_v<std::remove_cvref_t<T>, Object>)
+    CallableObject(const T& data) : Object(data) {
+        register_callable_object_type<T>(std::make_index_sequence<CTC::FunctionInfo<T>::argc>{});
+    }
+    template <typename T>
+        requires(!std::is_same_v<std::remove_cvref_t<T>, CallableObject> && !std::is_same_v<std::remove_cvref_t<T>, Object>)
+    CallableObject(T&& data) : Object(std::move(data)) {
+        register_callable_object_type<T>(std::make_index_sequence<CTC::FunctionInfo<T>::argc>{});
+    }
+    static inline std::shared_ptr<std::vector<Object*>> make_args(const auto&... args) {
+        std::vector<Object*> targs;
+        (targs.push_back(new Object(args)), ...);
+        return std::make_shared<std::vector<Object*>>(std::move(targs));
     }
 };
 } // namespace AnyObject
