@@ -469,7 +469,7 @@ private:
         callableObjects[get_id()] = [](Object& callable, std::vector<Object*>& args) -> Object {
             if (args.size() != CTC::FunctionInfo<T>::argc) {
                 throw std::invalid_argument(
-                    std::format("invalid argument count:need:{},given:{}", CTC::FunctionInfo<T>::argc, args.size())
+                    std::format("invalid argument count:need:{},given:{}.", CTC::FunctionInfo<T>::argc, args.size())
                 );
             }
             if constexpr (std::is_same_v<typename CTC::FunctionInfo<T>::ret, void>) {
