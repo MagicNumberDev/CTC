@@ -474,6 +474,14 @@ public:
                 };
         }
     }
+    template <typename T>
+    static void
+    register_type(void (*deleter)(void*), void* (*copier)(const void*), bool (*comparator)(void* a, void* b)) {
+        registered.insert(id_of<T>);
+        if (deleter) deleters[id_of<T>] = deleter;
+        if (copier) copiers[id_of<T>] = copier;
+        if (comparator) comparators[id_of<T>] = comparator;
+    }
 };
 
 struct CallableObject : Object {
