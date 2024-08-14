@@ -18,7 +18,7 @@ struct Object {
     enum class CastRuleType { BigToSmall, SmallToBig, Equal };
 
 private:
-    static inline std::unordered_set<id_t>                         registered = {id_of<nullptr_t>};
+    static inline std::unordered_set<id_t>                         registered = {id_of<std::nullptr_t>};
     static inline std::unordered_map<id_t, void (*)(void*)>        deleters;
     static inline std::unordered_map<id_t, void* (*)(void*)>       copiers;
     static inline std::unordered_map<id_t, bool (*)(void*, void*)> comparators;
@@ -136,25 +136,14 @@ public:
         requires(!std::is_same_v<std::remove_cvref_t<T>, Object>)
     Object(const T& data) : id(id_of<T>),
                             data(new T(data)) {
-        if (!registered.contains(id)) {
-            registered.insert(id);
-            if constexpr (requires(T* a) { delete a; }) deleters[id] = [](void* v) -> void { delete (T*)v; };
-            if constexpr (requires(T a) { new T(a); }) copiers[id] = [](void* v) -> void* { return new T(*((T*)v)); };
-            if constexpr (requires(T a, T b) { a == b; })
-                comparators[id] = [](void* a, void* b) -> bool { return (*((T*)a)) == (*((T*)b)); };
-        }
+        register_normal_type<T>();
         refcounts[this->data] = 1;
     }
     template <typename T>
         requires(!std::is_same_v<std::remove_cvref_t<T>, Object> && !std::is_reference_v<T>)
     Object(T&& data) : id(id_of<T>),
                        data(new T(std::move(data))) {
-        if (!registered.contains(id)) {
-            if constexpr (requires(T* a) { delete a; }) deleters[id] = [](void* v) -> void { delete (T*)v; };
-            if constexpr (requires(T a) { new T(a); }) copiers[id] = [](void* v) -> void* { return new T(*((T*)v)); };
-            if constexpr (requires(T a, T b) { a == b; })
-                comparators[id] = [](void* a, void* b) -> bool { return (*((T*)a)) == (*((T*)b)); };
-        }
+        register_normal_type<T>();
         refcounts[this->data] = 1;
     }
     ~Object() {
@@ -188,11 +177,13 @@ public:
     }
     template <typename T>
     T* cast() {
+        register_normal_type<T>();
         if (id_of<T> == id && refcounts.contains(data)) return static_cast<T*>(data);
         else return nullptr;
     }
     template <typename T>
     Object type_cast() {
+        register_normal_type<T>();
         if (id == id_of<T>) return copy();
         std::unordered_set<id_t> vis;
         auto                     res = try_cast(id, id_of<T>, data, vis);
@@ -207,11 +198,35 @@ public:
         return {id_of<T>, res};
     }
     operator bool() { return data != nullptr; }
-    Object()              = delete;
-    Object(const Object&) = delete;
+    Object() {
+        id              = id_of<std::nullptr_t>;
+        data            = nullptr;
+        refcounts[data] = 1;
+    }
+    Object(const Object& o) {
+        if (copiers.contains(o.id)) {
+            id   = o.id;
+            data = copiers[id](o.data);
+        } else {
+            id   = id_of<std::nullptr_t>;
+            data = nullptr;
+        }
+        refcounts[data] = 1;
+    }
     Object(Object&& o) {
         std::swap(id, o.id);
         std::swap(data, o.data);
+    }
+    Object& operator=(const Object& o) {
+        if (copiers.contains(o.id)) {
+            id   = o.id;
+            data = copiers[id](o.data);
+        } else {
+            id   = id_of<std::nullptr_t>;
+            data = nullptr;
+        }
+        refcounts[data] = 1;
+        return *this;
     }
     static inline void register_cast_rule(id_t from, id_t to, void* (*cast)(const void*), CastRuleType type) {
         castrules[{from, to}] = {cast, type};
@@ -443,11 +458,20 @@ public:
     template <typename T>
     static void register_normal_type() {
         if (!registered.contains(id_of<T>)) {
-            if constexpr (requires(T* a) { delete a; }) deleters[id_of<T>] = [](void* v) -> void { delete (T*)v; };
+            if constexpr (requires(T* a) { delete a; })
+                deleters[id_of<T>] = [](void* v) -> void {
+                    if (v) delete (T*)v;
+                };
             if constexpr (requires(T a) { new T(a); } && !std::is_const_v<T>)
-                copiers[id_of<T>] = [](void* v) -> void* { return new T(*((T*)v)); };
+                copiers[id_of<T>] = [](void* v) -> void* {
+                    if (v) return new T(*((T*)v));
+                    else return nullptr;
+                };
             if constexpr (requires(T a, T b) { a == b; })
-                comparators[id_of<T>] = [](void* a, void* b) -> bool { return (*((T*)a)) == (*((T*)b)); };
+                comparators[id_of<T>] = [](void* a, void* b) -> bool {
+                    if (a && b) return (*((T*)a)) == (*((T*)b));
+                    else return a == b;
+                };
         }
     }
 };
