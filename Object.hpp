@@ -231,7 +231,7 @@ public:
     static inline void register_cast_rule(id_t from, id_t to, void* (*cast)(const void*), CastRuleType type) {
         castrules[{from, to}] = {cast, type};
     }
-    static inline void register_predef_rules() {
+    static inline void register_pre_def_rules() {
         register_normal_cast_rule<signed char, bool, CastRuleType::BigToSmall>();
         register_normal_cast_rule<unsigned char, bool, CastRuleType::BigToSmall>();
         register_normal_cast_rule<char, bool, CastRuleType::BigToSmall>();
